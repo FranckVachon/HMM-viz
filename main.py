@@ -55,8 +55,9 @@ class ViterbiAlgo:
             self.resultMatrix.append(np.zeros((tran.data.shape[0], seq.data.shape[0])))
 
         # init the first column of viterbi - this is just the probably of emitting the observed signal in each hidden state. Need to do for all the sequences provided
+        #here we assume we have no information on what's the more likely initial state - they start out equally likely
         for i,matrix in enumerate(self.resultMatrix):
-            matrix[:, 0] = self.emissionProbs[i][self.sequence[i][0]]
+            matrix[:, 0] = (1/self.transitionProbs[i].shape[0])*self.emissionProbs[i][self.sequence[i][0]]
 
     def dynamic_viterby(self):
         for k, (seq,em,tran, results) in enumerate(zip(self.sequence, self.emissionProbs, self.transitionProbs, self.resultMatrix)):
@@ -81,34 +82,66 @@ class ViterbiAlgo:
     def plot_results(self):
         """plots the results calculed above
         """
-        for k,(img, seq_desc) in enumerate(zip(self.img, self.seqObj)):
+        fig = plt.figure(len(self.resultMatrix))
+        fig.set_facecolor(color='black')
+        for k,(img, seq_desc, em_desc, tran_desc) in enumerate(zip(self.img, self.seqObj, self.emitObj, self.transitObj)):
             row_labels = range(img.shape[0])
             col_labels = range(img.shape[1])
-            plt.imshow(np.absolute(img), cmap='gray', )
-            plt.xticks(range(img.shape[1]), col_labels)
-            plt.yticks(range(img.shape[0]), row_labels)
-            plt.title(seq_desc.description)
-            plt.show()
+            fig.add_subplot(4,1, k+1)
+            plt.imshow(np.absolute(img), cmap='gray', vmax=1.0)
+            plt.xticks(range(img.shape[1]), col_labels, color='white')
+            plt.yticks(range(img.shape[0]), row_labels, color='white')
+            plt.title(seq_desc.description + em_desc.description + tran_desc.description, color='white')
+        plt.show()
 
     def show_plot(self):
         self.dynamic_viterby()
         self.plot_results()
 
 
-seq = [Sequence([0,0,1,1,1,2,2,2],"Test seq all 0 "),
-       Sequence([0,0,1,1,1,2,2,2], "Test seq all 1 "),
-       Sequence([2,2,2,2,2,2,2,2], "Test seq all 2")]
-emission = [EmissionProbs([[.33,.33,.33],  [.33,.33,.33], [.33, .33, .33]],"Test emission"),
-            EmissionProbs([[.98, .20, .01], [.01, .80, .80], [.01, .01, .19]], "Test emission"),
-            EmissionProbs([[.5, .25, .25], [.25, .5, .25], [.25, .25, .5]], "Test emission")]
-transit = [TransitionProbability([[.95,.05,.05],  [.05,.95,.05],   [.05, .05, .95]],"Transitions"),
-           TransitionProbability([[.95, .05, .05], [.05, .95, .05], [.05, .05, .95]], "Transitions"),
-           TransitionProbability([[.95, .05, .05], [.05, .95, .05], [.05, .05, .95]], "Transitions")]
+#Building different "typical" objects so we can combine then easily
+
+#sequences
+continuous_seq_1 = Sequence([1,1,1,1,1,1,1,1],"Continuous signal (1) - ")
+alternating_seq = Sequence([0,1,0,1,0,1,0,1], "Alternating signal (0-1) - ")
+long_transition_seq = Sequence([2,2,2,1,1,1,0,0,0], "Long transitions signal (2-1-0) - ")
+#emissions
+even_emission = EmissionProbs([[.33,.33,.33],  [.33,.33,.33], [.33, .33, .33]],"Even emission (.33) - ")
+single_strong_emission = EmissionProbs([[.9, .02, .08], [.04, .9, .06], [.03, .07, .9]], "Single strong signal (.9) - ")
+dual_strong_emission = EmissionProbs([[.43, .47, .1], [.1, .44, .46], [.46, .1, .44]], "Dual strong signal (.45,.45) - ")
+near_even_emission = EmissionProbs([[.25,.40,.35],  [.35,.25,.40], [.4, .35, .25]],"Even-ish emission (.4, .25, .35) - ")
+
+#transitions
+unlikely_transitions = TransitionProbability([[.9999,.0001,.0001],  [.0001,.9999,.0001],   [.0001, .0001, .999]],"Unlikely transitions (.999,.0001,.0001)")
+very_likely_transitions = TransitionProbability([[.01, .49, .49], [.49, .01, .49], [.49, .49, .01]], "Very likely transitions (.1,.45.45)")
+near_even_transitions = TransitionProbability([[.4, .3, .3], [.3, .4, .3], [.3, .3, .4]], "Near even (.3,.4,.3)")
+
+seq = [long_transition_seq, long_transition_seq, long_transition_seq]
+emission = [even_emission, single_strong_emission,dual_strong_emission]
+transit = [unlikely_transitions, unlikely_transitions, unlikely_transitions]
+
+algo_basic = ViterbiAlgo(seq, emission, transit)
+#algo_basic.show_plot()
+
+# Now we use the same sequence to study how emission probs change the picture
+#sequences
+seq_e = [long_transition_seq, long_transition_seq, long_transition_seq]
+emission_e = [near_even_emission, near_even_emission,near_even_emission]
+transit_e = [very_likely_transitions, unlikely_transitions, near_even_transitions]
 
 
-
-algo = ViterbiAlgo(seq, emission, transit)
-algo.show_plot()
-
+algo_emissions = ViterbiAlgo(seq_e, emission_e, transit_e)
+#algo_emissions.show_plot()
 
 
+continuous_seq_1 = Sequence([0,0,0,0,1,1,1,1,0,0,0,0],"Long transitions (0,1,0) - ")
+stark_emiss= EmissionProbs([[0.66, .33],  [.33,.66]],"Stark (.66, .33) - ")
+blurry_emiss= EmissionProbs([[0.55, .45],  [.45, .55]],"Blurry (.45, .55) - ")
+likely_transitions = TransitionProbability([[.01,.99],  [.99,.01]],"Likely transitions (.99,.01)")
+unlikely_transitions = TransitionProbability([[.99,.01],  [.01,.99]],"Unlikely transitions (.99,.01)")
+
+seq_debug =[continuous_seq_1, continuous_seq_1, continuous_seq_1, continuous_seq_1]
+emiss_debug =[stark_emiss, blurry_emiss, stark_emiss, blurry_emiss]
+transit_debug =[likely_transitions, likely_transitions, unlikely_transitions, unlikely_transitions]
+algo_test = ViterbiAlgo(seq_debug, emiss_debug, transit_debug)
+algo_test.show_plot()

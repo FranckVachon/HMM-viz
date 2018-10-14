@@ -95,15 +95,18 @@ class ViterbiAlgo:
         self.plot_results()
 
 
-seq = [Sequence([0,0,0,0,0,0,0,0],"Test seq all 0 "),
-       Sequence([1,1,1,1,1,1,1,1], "Test seq all 1 "),
+seq = [Sequence([0,0,1,1,1,2,2,2],"Test seq all 0 "),
+       Sequence([0,0,1,1,1,2,2,2], "Test seq all 1 "),
        Sequence([2,2,2,2,2,2,2,2], "Test seq all 2")]
-emission = [EmissionProbs([[.5,.25,.25],  [.25,.5,.25], [.25, .25, .5]],"Test emission"),
-            EmissionProbs([[.5, .25, .25], [.25, .5, .25], [.25, .25, .5]], "Test emission"),
+emission = [EmissionProbs([[.33,.33,.33],  [.33,.33,.33], [.33, .33, .33]],"Test emission"),
+            EmissionProbs([[.98, .20, .01], [.01, .80, .80], [.01, .01, .19]], "Test emission"),
             EmissionProbs([[.5, .25, .25], [.25, .5, .25], [.25, .25, .5]], "Test emission")]
 transit = [TransitionProbability([[.95,.05,.05],  [.05,.95,.05],   [.05, .05, .95]],"Transitions"),
            TransitionProbability([[.95, .05, .05], [.05, .95, .05], [.05, .05, .95]], "Transitions"),
            TransitionProbability([[.95, .05, .05], [.05, .95, .05], [.05, .05, .95]], "Transitions")]
+
+
+
 algo = ViterbiAlgo(seq, emission, transit)
 algo.show_plot()
 
